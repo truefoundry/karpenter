@@ -1,4 +1,4 @@
-module sigs.k8s.io/karpenter
+module github.com/truefoundry/karpenter
 
 go 1.21
 
