@@ -2,6 +2,8 @@ module sigs.k8s.io/karpenter
 
 go 1.21
 
+replace sigs.k8s.io/karpenter => github.com/truefoundry/karpenter v0.35.2
+
 require (
 	github.com/Pallinder/go-randomdata v1.2.0
 	github.com/avast/retry-go v3.0.0+incompatible
