@@ -268,7 +268,9 @@ func (s *Scheduler) add(ctx context.Context, pod *v1.Pod) error {
 
 	// Pick existing node that we are about to create
 	for _, nodeClaim := range s.newNodeClaims {
+		
 		if err := nodeClaim.Add(pod); err == nil {
+			logging.FromContext(ctx).With("nodeclaim", nodeClaim.NodePoolName).Infof("We seem to be adjusting within the existing in-memory nodes")
 			return nil
 		}
 	}
