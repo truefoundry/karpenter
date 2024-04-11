@@ -264,6 +264,7 @@ func (s *Scheduler) add(ctx context.Context, pod *v1.Pod) error {
 		
 		if err := nodeClaim.Add(pod); err == nil {
 			existingNodeClaim = nodeClaim
+			break
 			// return nil
 		} else {
 			logging.FromContext(ctx).With("nodeclaim", nodeClaim.NodePoolName).Errorf("Error while adding pod to nodeclaim, %s", err)
