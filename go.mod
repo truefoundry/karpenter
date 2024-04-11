@@ -12,6 +12,7 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/imdario/mergo v0.3.16
 	github.com/mitchellh/hashstructure/v2 v2.0.2
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/onsi/ginkgo/v2 v2.15.0
 	github.com/onsi/gomega v1.31.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -35,7 +36,6 @@ require (
 	knative.dev/pkg v0.0.0-20230712131115-7051d301e7f4
 	sigs.k8s.io/controller-runtime v0.17.2
 	sigs.k8s.io/karpenter v0.0.0-00010101000000-000000000000
-	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 )
 
 require (
