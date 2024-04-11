@@ -12,12 +12,12 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/imdario/mergo v0.3.16
 	github.com/mitchellh/hashstructure/v2 v2.0.2
-	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/onsi/ginkgo/v2 v2.15.0
 	github.com/onsi/gomega v1.31.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/client_model v0.6.0
+	github.com/qdm12/reprint v0.0.0-20200326205758-722754a53494
 	github.com/samber/lo v1.39.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0

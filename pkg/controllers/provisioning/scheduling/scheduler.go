@@ -36,7 +36,7 @@ import (
 	"sigs.k8s.io/karpenter/pkg/scheduling"
 	"sigs.k8s.io/karpenter/pkg/utils/pod"
 	"sigs.k8s.io/karpenter/pkg/utils/resources"
-	"github.com/mohae/deepcopy"
+	"github.com/qdm12/reprint"
 )
 
 func NewScheduler(ctx context.Context, kubeClient client.Client, nodeClaimTemplates []*NodeClaimTemplate,
@@ -262,7 +262,7 @@ func (s *Scheduler) add(ctx context.Context, pod *v1.Pod) error {
 	var existingCopiedNodeClaim *NodeClaim = nil
 	// Pick existing node that we are about to create
 	for _, nodeClaim := range s.newNodeClaims {
-		copiedNodeClaim := deepcopy.Copy(nodeClaim).(*NodeClaim)
+		copiedNodeClaim := reprint.This(nodeClaim).(*NodeClaim)
 		if err := copiedNodeClaim.Add(pod); err == nil {
 			existingCopiedNodeClaim = copiedNodeClaim
 			existingOriginalNodeClaim = nodeClaim
