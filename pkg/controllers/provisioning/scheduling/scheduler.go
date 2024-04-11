@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/karpenter/pkg/scheduling"
 	"sigs.k8s.io/karpenter/pkg/utils/pod"
 	"sigs.k8s.io/karpenter/pkg/utils/resources"
+	"github.com/mohae/deepcopy"
 )
 
 func NewScheduler(ctx context.Context, kubeClient client.Client, nodeClaimTemplates []*NodeClaimTemplate,
@@ -257,13 +258,14 @@ func (s *Scheduler) add(ctx context.Context, pod *v1.Pod) error {
 	// Consider using https://pkg.go.dev/container/heap
 	sort.Slice(s.newNodeClaims, func(a, b int) bool { return len(s.newNodeClaims[a].Pods) < len(s.newNodeClaims[b].Pods) })
 
-	var existingNodeClaim *NodeClaim = nil
+	var existingOriginalNodeClaim *NodeClaim = nil
+	var existingCopiedNodeClaim *NodeClaim = nil
 	// Pick existing node that we are about to create
 	for _, nodeClaim := range s.newNodeClaims {
-		logging.FromContext(ctx).With("nodeclaim", nodeClaim.NodePoolName).Infof("We seem to be adjusting within the existing in-memory nodes")
-		
-		if err := nodeClaim.Add(pod); err == nil {
-			existingNodeClaim = nodeClaim
+		copiedNodeClaim := deepcopy.Copy(nodeClaim).(*NodeClaim)
+		if err := copiedNodeClaim.Add(pod); err == nil {
+			existingCopiedNodeClaim = copiedNodeClaim
+			existingOriginalNodeClaim = nodeClaim
 			break
 			// return nil
 		} else {
@@ -295,21 +297,24 @@ func (s *Scheduler) add(ctx context.Context, pod *v1.Pod) error {
 			continue
 		}
 
-		if existingNodeClaim != nil {
-			existingNodeClaim.InstanceTypeOptions.OrderByPrice(existingNodeClaim.NodeClaimTemplate.Requirements)
+		if existingCopiedNodeClaim != nil {
+			existingCopiedNodeClaim.InstanceTypeOptions.OrderByPrice(existingCopiedNodeClaim.NodeClaimTemplate.Requirements)
 			nodeClaim.InstanceTypeOptions.OrderByPrice(nodeClaim.NodeClaimTemplate.Requirements)
-			existingMinPrice := existingNodeClaim.InstanceTypeOptions[0].Offerings.Available().Compatible(existingNodeClaim.NodeClaimTemplate.Requirements).Cheapest().Price
+			existingMinPrice := existingCopiedNodeClaim.InstanceTypeOptions[0].Offerings.Available().Compatible(existingCopiedNodeClaim.NodeClaimTemplate.Requirements).Cheapest().Price
 			newMinPrice := nodeClaim.InstanceTypeOptions[0].Offerings.Available().Compatible(nodeClaim.NodeClaimTemplate.Requirements).Cheapest().Price
-			if existingMinPrice/float64(len(existingNodeClaim.Pods)) > newMinPrice {
-				logging.FromContext(ctx).With("nodeclaim", existingNodeClaim.NodePoolName).Infof("We might be making a wrong decision, existing node price per pod: %f is greater than new node price: %f", existingMinPrice/float64(len(existingNodeClaim.Pods)), newMinPrice)
+
+			if existingMinPrice/float64(len(existingCopiedNodeClaim.Pods)) > newMinPrice {
+				logging.FromContext(ctx).With("nodeclaim", existingCopiedNodeClaim.NodePoolName).Infof("Creating a new node seems cheaper, existing node price per pod: %f is greater than new node price: %f", existingMinPrice/float64(len(existingCopiedNodeClaim.Pods)), newMinPrice)
 			} else {
-				logging.FromContext(ctx).With("nodeclaim", existingNodeClaim.NodePoolName).Infof("We are making a correct decision, existing node price per pod: %f is lesser than new node price: %f", existingMinPrice/float64(len(existingNodeClaim.Pods)), newMinPrice)
+				logging.FromContext(ctx).With("nodeclaim", existingCopiedNodeClaim.NodePoolName).Infof("Adjusting within existing node makes more sense, existing node price per pod: %f is lesser than new node price: %f", existingMinPrice/float64(len(existingCopiedNodeClaim.Pods)), newMinPrice)
+				if err := existingOriginalNodeClaim.Add(pod); err == nil {
+					return nil
+				}
 			}
-		} else {
-			// we will launch this nodeClaim and need to track its maximum possible resource usage against our remaining resources
-			s.newNodeClaims = append(s.newNodeClaims, nodeClaim)
-			s.remainingResources[nodeClaimTemplate.NodePoolName] = subtractMax(s.remainingResources[nodeClaimTemplate.NodePoolName], nodeClaim.InstanceTypeOptions)
 		}
+		// we will launch this nodeClaim and need to track its maximum possible resource usage against our remaining resources
+		s.newNodeClaims = append(s.newNodeClaims, nodeClaim)
+		s.remainingResources[nodeClaimTemplate.NodePoolName] = subtractMax(s.remainingResources[nodeClaimTemplate.NodePoolName], nodeClaim.InstanceTypeOptions)
 		return nil
 	}
 	

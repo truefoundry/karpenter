@@ -35,6 +35,7 @@ require (
 	knative.dev/pkg v0.0.0-20230712131115-7051d301e7f4
 	sigs.k8s.io/controller-runtime v0.17.2
 	sigs.k8s.io/karpenter v0.0.0-00010101000000-000000000000
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 )
 
 require (
