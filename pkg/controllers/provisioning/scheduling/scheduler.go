@@ -295,6 +295,7 @@ func (s *Scheduler) add(ctx context.Context, pod *v1.Pod) error {
 			continue
 		}
 		newNodeClaim = nodeClaim
+		break
 	}
 	if existingNodeClaim != nil {
 		existingNodeClaim.InstanceTypeOptions.OrderByPrice(existingNodeClaim.NodeClaimTemplate.Requirements)
