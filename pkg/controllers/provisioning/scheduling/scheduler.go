@@ -270,7 +270,6 @@ func (s *Scheduler) add(ctx context.Context, pod *v1.Pod) error {
 		}
 	}
 
-	var newNodeClaim *NodeClaim = nil
 	// Create new node
 	var errs error
 	for _, nodeClaimTemplate := range s.nodeClaimTemplates {
@@ -294,24 +293,25 @@ func (s *Scheduler) add(ctx context.Context, pod *v1.Pod) error {
 				err))
 			continue
 		}
-		newNodeClaim = nodeClaim
-		break
-	}
-	if existingNodeClaim != nil {
-		existingNodeClaim.InstanceTypeOptions.OrderByPrice(existingNodeClaim.NodeClaimTemplate.Requirements)
-		newNodeClaim.InstanceTypeOptions.OrderByPrice(newNodeClaim.NodeClaimTemplate.Requirements)
-		existingMinPrice := existingNodeClaim.InstanceTypeOptions[0].Offerings.Available().Compatible(existingNodeClaim.NodeClaimTemplate.Requirements).Cheapest().Price
-		newMinPrice := newNodeClaim.InstanceTypeOptions[0].Offerings.Available().Compatible(newNodeClaim.NodeClaimTemplate.Requirements).Cheapest().Price
-		if existingMinPrice/float64(len(existingNodeClaim.Pods)) > newMinPrice {
-			logging.FromContext(ctx).With("nodeclaim", existingNodeClaim.NodePoolName).Infof("We might be making a wrong decision, existing node price per pod: %f is greater than new node price: %f", existingMinPrice/float64(len(existingNodeClaim.Pods)), newMinPrice)
+
+		if existingNodeClaim != nil {
+			existingNodeClaim.InstanceTypeOptions.OrderByPrice(existingNodeClaim.NodeClaimTemplate.Requirements)
+			nodeClaim.InstanceTypeOptions.OrderByPrice(nodeClaim.NodeClaimTemplate.Requirements)
+			existingMinPrice := existingNodeClaim.InstanceTypeOptions[0].Offerings.Available().Compatible(existingNodeClaim.NodeClaimTemplate.Requirements).Cheapest().Price
+			newMinPrice := nodeClaim.InstanceTypeOptions[0].Offerings.Available().Compatible(nodeClaim.NodeClaimTemplate.Requirements).Cheapest().Price
+			if existingMinPrice/float64(len(existingNodeClaim.Pods)) > newMinPrice {
+				logging.FromContext(ctx).With("nodeclaim", existingNodeClaim.NodePoolName).Infof("We might be making a wrong decision, existing node price per pod: %f is greater than new node price: %f", existingMinPrice/float64(len(existingNodeClaim.Pods)), newMinPrice)
+			} else {
+				logging.FromContext(ctx).With("nodeclaim", existingNodeClaim.NodePoolName).Infof("We are making a correct decision, existing node price per pod: %f is lesser than new node price: %f", existingMinPrice/float64(len(existingNodeClaim.Pods)), newMinPrice)
+			}
 		} else {
-			logging.FromContext(ctx).With("nodeclaim", existingNodeClaim.NodePoolName).Infof("We are making a correct decision, existing node price per pod: %f is lesser than new node price: %f", existingMinPrice/float64(len(existingNodeClaim.Pods)), newMinPrice)
+			// we will launch this nodeClaim and need to track its maximum possible resource usage against our remaining resources
+			s.newNodeClaims = append(s.newNodeClaims, nodeClaim)
+			s.remainingResources[nodeClaimTemplate.NodePoolName] = subtractMax(s.remainingResources[nodeClaimTemplate.NodePoolName], nodeClaim.InstanceTypeOptions)
 		}
-	} else {
-		// we will launch this nodeClaim and need to track its maximum possible resource usage against our remaining resources
-		s.newNodeClaims = append(s.newNodeClaims, newNodeClaim)
-		s.remainingResources[newNodeClaim.NodeClaimTemplate.NodePoolName] = subtractMax(s.remainingResources[newNodeClaim.NodeClaimTemplate.NodePoolName], newNodeClaim.InstanceTypeOptions)
+		return nil
 	}
+	
 	return errs
 }
 
