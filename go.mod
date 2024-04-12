@@ -1,6 +1,8 @@
-module sigs.k8s.io/karpenter
+module github.com/truefoundry/karpenter
 
 go 1.21
+
+replace sigs.k8s.io/karpenter => github.com/truefoundry/karpenter v0.35.2
 
 require (
 	github.com/Pallinder/go-randomdata v1.2.0
@@ -15,6 +17,7 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/client_model v0.6.0
+	github.com/qdm12/reprint v0.0.0-20200326205758-722754a53494
 	github.com/samber/lo v1.39.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
@@ -32,6 +35,7 @@ require (
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	knative.dev/pkg v0.0.0-20230712131115-7051d301e7f4
 	sigs.k8s.io/controller-runtime v0.17.2
+	sigs.k8s.io/karpenter v0.0.0-00010101000000-000000000000
 )
 
 require (

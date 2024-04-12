@@ -87,7 +87,7 @@ func (n *NodeClaim) Add(pod *v1.Pod) error {
 	strictPodRequirements := podRequirements
 	if scheduling.HasPreferredNodeAffinity(pod) {
 		// strictPodRequirements is important as it ensures we don't inadvertently restrict the possible pod domains by a
-		// preferred node affinity.  Only required node affinities can actually reduce pod domains.
+		// preferred node affinity. Only required node affinities can actually reduce pod domains.
 		strictPodRequirements = scheduling.NewStrictPodRequirements(pod)
 	}
 	// Check Topology Requirements
